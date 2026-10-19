@@ -8,10 +8,8 @@ representation, the SMT-LIB parser and printer, and the solver connection.
 jKonstraints adds what such clients need on top of konstraints:
 
 - **`SmtContext`**: incremental parsing of SMT-LIB text into konstraints expressions. Declarations
-  persist across calls; re-declarations with the same sort are ignored.
-- **`SpoutDialect`**: normalizes the lenient SMT-LIB that SPouT emits (`!=`, `(RNE RoundingMode)`,
-  `<`/`-` on bit-vectors, `bv2int`/`int2bv`, `str.to.int`, negative numerals) to standard SMT-LIB.
-  Standard input passes through unchanged.
+  persist across calls; re-declarations with the same sort are ignored. Input must be standard
+  SMT-LIB (SPouT emits standard SMT-LIB 2.7).
 - **`SolverFactory`, `ConstraintSolver`, `SolverContext`**: the familiar jConstraints solving API
   (push, pop, add, solve, `Result`), implemented on a konstraints `SolverSession`, i.e., a solver
   process that is kept alive. Symbols are declared to the solver automatically.
@@ -28,7 +26,7 @@ and SMT-LIB is the only exchange format.
 ```java
 SmtContext smt = new SmtContext();
 smt.declare("(declare-fun __int_0 () (_ BitVec 32))");
-Expression<BoolSort> decision = smt.parseFormula("(!= __int_0 #x00000000)");
+Expression<BoolSort> decision = smt.parseFormula("(not (= __int_0 #x00000000))");
 
 try (SolverContext ctx = SolverFactory.createSolver("z3").createContext()) {
   ctx.add(decision);

@@ -1,0 +1,45 @@
+[AUXILIARY] (declare-fun null () Int)
+[DECLARE] (declare-fun __int_0 () (_ BitVec 32))
+[DECLARE] (declare-fun __long_0 () (_ BitVec 64))
+[DECLARE] (declare-fun __byte_0 () (_ BitVec 8))
+[DECLARE] (declare-fun __short_0 () (_ BitVec 16))
+[DECLARE] (declare-fun __char_0 () (_ BitVec 16))
+[DECLARE] (declare-fun __float_0 () (_ FloatingPoint 8 24))
+[DECLARE] (declare-fun __double_0 () (_ FloatingPoint 11 53))
+[DECLARE] (declare-fun __string_0 () String)
+[ASSUMPTION] (assert (<= (str.len __string_0) 2147483647)) // sat=true
+[DECISION] (assert (not (= __int_0 #x00000000))) // branchCount=2, branchId=0
+[DECISION] (assert (not (= __int_0 #x00000000))) // branchCount=2, branchId=0
+[DECISION] (assert (bvsge #x00000003 (bvneg __int_0))) // branchCount=2, branchId=1
+[DECISION] (assert (bvsgt (bvneg __long_0) #x0000000000000003)) // branchCount=2, branchId=0
+[DECISION] (assert (not (= __long_0 #x000000000000002a))) // branchCount=2, branchId=0
+[DECISION] (assert (= __int_0 #x000003e8)) // branchCount=3, branchId=1
+[DECISION] (assert (not (= #xffffffff ((_ sign_extend 24) __byte_0)))) // branchCount=2, branchId=1
+[DECISION] (assert (not (= #xfffffffe ((_ sign_extend 16) __short_0)))) // branchCount=2, branchId=1
+[DECISION] (assert (not (= #x0000ffff ((_ zero_extend 16) __char_0)))) // branchCount=2, branchId=1
+[DECISION] (assert (fp.leq (fp.add RNE (fp #b0 #b01111111 #b10000000000000000000000) __float_0) (fp #b0 #b10000000 #b00000000000000000000000))) // branchCount=2, branchId=1
+[DECISION] (assert (fp.geq (fp.mul RNE (fp #b0 #b10000000000 #b0000000000000000000000000000000000000000000000000000) __double_0) (fp #b1 #b01111111111 #b0000000000000000000000000000000000000000000000000000))) // branchCount=2, branchId=1
+[DECISION] (assert (fp.leq (let ((__rem_x __double_0) (__rem_y (fp #b0 #b10000000000 #b1000000000000000000000000000000000000000000000000000))) (let ((__rem_r (fp.rem __rem_x __rem_y))) (ite (and (not (fp.isZero __rem_r)) (not (= (fp.isNegative __rem_r) (fp.isNegative __rem_x)))) (ite (fp.isNegative __rem_x) (fp.sub RNE __rem_r (fp.abs __rem_y)) (fp.add RNE __rem_r (fp.abs __rem_y))) __rem_r))) (fp #b0 #b01111111111 #b0000000000000000000000000000000000000000000000000000))) // branchCount=2, branchId=1
+[DECISION] (assert (fp.geq (let ((__rem_x __float_0) (__rem_y (fp #b0 #b10000000 #b01000000000000000000000))) (let ((__rem_r (fp.rem __rem_x __rem_y))) (ite (and (not (fp.isZero __rem_r)) (not (= (fp.isNegative __rem_r) (fp.isNegative __rem_x)))) (ite (fp.isNegative __rem_x) (fp.sub RNE __rem_r (fp.abs __rem_y)) (fp.add RNE __rem_r (fp.abs __rem_y))) __rem_r))) (fp #b0 #b00000000 #b00000000000000000000000))) // branchCount=2, branchId=1
+[DECISION] (assert (bvsge #x00000007 (ite (fp.isNaN __double_0) #x00000000 (ite (fp.isNegative __double_0) (ite (fp.lt __double_0 ((_ to_fp 11 53) RTZ #x80000000)) #x80000000 ((_ fp.to_sbv 32) RTZ __double_0)) (ite (fp.gt __double_0 ((_ to_fp 11 53) RTZ #x7fffffff)) #x7fffffff ((_ fp.to_sbv 32) RTZ __double_0)))))) // branchCount=2, branchId=1
+[DECISION] (assert (bvsge (ite (fp.isNaN __float_0) #x0000000000000000 (ite (fp.isNegative __float_0) (ite (fp.lt __float_0 ((_ to_fp 8 24) RTZ #x8000000000000000)) #x8000000000000000 ((_ fp.to_sbv 64) RTZ __float_0)) (ite (fp.gt __float_0 ((_ to_fp 8 24) RTZ #x7fffffffffffffff)) #x7fffffffffffffff ((_ fp.to_sbv 64) RTZ __float_0)))) #xfffffffffffffffd)) // branchCount=2, branchId=1
+[DECISION] (assert (fp.gt ((_ to_fp 11 53) RNE __int_0) (fp #b0 #b10000000000 #b0100000000000000000000000000000000000000000000000000))) // branchCount=2, branchId=0
+[DECISION] (assert (fp.lt ((_ to_fp 8 24) RNE __long_0) (fp #b0 #b01111110 #b00000000000000000000000))) // branchCount=2, branchId=0
+[DECISION] (assert (bvsge #x00000002 ((_ int_to_bv 32) (str.len __string_0)))) // branchCount=2, branchId=1
+[DECLARE] (declare-fun __string_1 () String)
+[ASSUMPTION] (assert (<= (str.len __string_1) 2147483647)) // sat=true
+[DECISION] (assert (= #xffffffff (ite (bvsgt (ite (bvslt #x00000000 #x00000000) #x00000000 #x00000000) ((_ int_to_bv 32) (str.len __string_1))) (ite (= ((_ int_to_bv 32) (str.len "z")) #x00000000) ((_ int_to_bv 32) (str.len __string_1)) #xffffffff) ((_ int_to_bv 32) (str.indexof __string_1 "z" (ubv_to_int (ite (bvslt #x00000000 #x00000000) #x00000000 #x00000000))))))) // branchCount=2, branchId=0
+[DECISION] (assert (bvsge #x00000000 (bvsub ((_ int_to_bv 32) (str.len __string_1)) #x00000001))) // branchCount=2, branchId=0
+[DECISION] (assert (not (bvslt (bvsub ((_ int_to_bv 32) (str.len __string_1)) #x00000001) #x00000000))) // branchCount=2, branchId=0
+[DECISION] (assert (and (bvsle #x00000000 (bvsub ((_ int_to_bv 32) (str.len __string_1)) #x00000001)) (bvslt (bvsub ((_ int_to_bv 32) (str.len __string_1)) #x00000001) #x00000001))) // branchCount=2, branchId=1
+[DECLARE] (declare-fun obj.cls (Int) String)
+[DECLARE] (declare-fun arr.content.0 () (Array Int (_ BitVec 8)))
+[ASSUMPTION] (assert (= arr.content.0 (store ((as const (Array Int (_ BitVec 8))) #x00) 0 #x6b))) // sat=true
+[DECISION] (assert (not (= #x0000007a ((_ sign_extend 24) (select arr.content.0 (ubv_to_int (bvsub ((_ int_to_bv 32) (str.len __string_1)) #x00000001))))))) // branchCount=2, branchId=1
+[DECISION] (assert (bvslt (bvadd (bvsub ((_ int_to_bv 32) (str.len __string_1)) #x00000001) #xffffffff) #x00000000)) // branchCount=2, branchId=1
+[DECISION] (assert (and (and (<= 0 0) (<= (ubv_to_int ((_ int_to_bv 32) (str.len __string_1))) (str.len __string_1))) (<= 0 (ubv_to_int ((_ int_to_bv 32) (str.len __string_1)))))) // branchCount=2, branchId=0
+[DECISION] (assert (= (str.substr __string_1 0 (- (ubv_to_int ((_ int_to_bv 32) (str.len __string_1))) 0)) "k")) // branchCount=2, branchId=0
+[DECISION] (assert (not (= ((_ int_to_bv 32) (str.len __string_1)) #x00000000))) // branchCount=2, branchId=1
+[DECISION] (assert (bvslt (bvsub ((_ int_to_bv 32) (str.len __string_1)) #x00000002) #x00000000)) // branchCount=2, branchId=0
+[DECISION] (assert (not (>= (str.indexof __string_1 "," 0) 0))) // branchCount=2, branchId=1
+[ENDOFTRACE]

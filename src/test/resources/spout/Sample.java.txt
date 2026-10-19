@@ -1,0 +1,56 @@
+import tools.aqua.concolic.Verifier;
+
+public class Main {
+  public static void main(String[] args) {
+    int i = Verifier.nondetInt();
+    long l = Verifier.nondetLong();
+    byte b = Verifier.nondetByte();
+    short sh = Verifier.nondetShort();
+    char c = Verifier.nondetChar();
+    float f = Verifier.nondetFloat();
+    double d = Verifier.nondetDouble();
+    String s = Verifier.nondetString();
+    int sink = 0;
+
+    // division by zero check (BVNE), integer negation
+    if (i != 0) sink += 100 / i;
+    if (-i > 3) sink++;
+    if (-l > 3L) sink++;
+    // LCMP + IFNE
+    if (l != 42L) sink++;
+    // lookupswitch default
+    switch (i) { case 1: sink++; break; case 1000: sink--; break; default: sink += 2; }
+    // byte/short/char constants (negative)
+    if (b == (byte) -1) sink++;
+    if (sh == (short) -2) sink++;
+    if (c == '￿') sink++;
+    // floating point arithmetic, conversions, remainder
+    if (f + 1.5f > 2.0f) sink++;
+    if (d * 2.0 < -1.0) sink++;
+    if (d % 3.0 > 1.0) sink++;
+    if (f % 2.5f < 0.0f) sink++;
+    if ((int) d > 7) sink++;
+    if ((long) f < -3L) sink++;
+    if ((double) i > 2.5) sink++;
+    if ((float) l < 0.5f) sink++;
+    // strings
+    if (s.length() > 2) {
+      if (s.charAt(1) == 'x') sink++;
+      String sub = s.substring(1, s.length());
+      if (sub.equals("ab")) sink++;
+      if (!s.equals("hello")) sink++;
+      if (s.indexOf("q") > 0) sink++;
+      if (s.regionMatches(0, "abc", 0, 2)) sink++;
+    }
+    // string/int conversions and negative string-theory integers
+    String t = Verifier.nondetString();
+    if (t.indexOf("z") == -1) sink++;
+    if (t.lastIndexOf('z') < 0) sink++;
+    if (t.substring(0, t.length()).equals("k")) sink++;
+    if (t.isEmpty()) sink++;
+    if (t.startsWith("ab")) sink++;
+    String[] parts = t.split(",");
+    if (parts.length == 2) sink++;
+    System.out.println(sink);
+  }
+}

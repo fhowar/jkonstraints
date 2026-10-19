@@ -6,14 +6,15 @@
 
 package tools.aqua.jkonstraints
 
-import tools.aqua.jkonstraints.smtlib.SExpr
-import tools.aqua.jkonstraints.smtlib.SpoutDialect
 import tools.aqua.konstraints.parser.SMTScriptParser
+import tools.aqua.konstraints.parser.ScriptHandler
 import tools.aqua.konstraints.smt.ALL
 import tools.aqua.konstraints.smt.BoolSort
 import tools.aqua.konstraints.smt.Expression
 import tools.aqua.konstraints.smt.MutableSMTProgram
 import tools.aqua.konstraints.smt.SMTBool
+import tools.aqua.konstraints.smt.Sort
+import tools.aqua.konstraints.smt.Symbol
 import tools.aqua.konstraints.smt.cast
 import tools.aqua.konstraints.smt.toSymbol
 
@@ -24,15 +25,12 @@ import tools.aqua.konstraints.smt.toSymbol
  * line by line. Re-declaring a symbol with the same sort is ignored (client tools tend to resend
  * their declarations), re-declaring it with a different sort is an error.
  *
- * Input is first normalized by [SpoutDialect], so the lenient SMT-LIB emitted by SPouT is accepted.
- * Commands that do not declare or assert anything (`set-logic`, `check-sat`, `push`, ...) are
- * ignored; the context always uses logic `ALL`.
+ * Input must be standard SMT-LIB; it is parsed by konstraints. `push` and `pop` are ignored (the
+ * declarations of a trace are global); the context always uses logic `ALL`.
  */
 class SmtContext {
   /** The konstraints program holding all declarations made so far. */
   val program = MutableSMTProgram(emptyList()).apply { setLogic(ALL) }
-
-  private val dialect = SpoutDialect()
 
   /** Processes declarations in [script]. Assertions in [script] are rejected. */
   fun declare(script: String) {
@@ -45,51 +43,20 @@ class SmtContext {
    * are added to this context; the assertions are not stored.
    */
   fun load(script: String): List<Expression<BoolSort>> {
-    val assertions = mutableListOf<Expression<BoolSort>>()
-
-    for (command in SExpr.parseAll(script)) {
-      require(command is SExpr.SList && command.head is SExpr.Atom) { "Not a command: $command" }
-
-      when (val name = command.head!!.atom) {
-        "declare-fun",
-        "declare-const" -> {
-          val symbol = command.items[1].atom!!
-          val sort = command.items.last()
-          val known = dialect.sorts[symbol]
-          if (known != null && isDeclared(symbol)) {
-            require(known == sort) { "$symbol is already declared with sort $known, not $sort" }
-          } else {
-            dialect.command(command)
-            SMTScriptParser.parseInto(program, SExpr.print(command))
-          }
-        }
-        "define-fun",
-        "declare-sort",
-        "define-sort" -> SMTScriptParser.parseInto(program, SExpr.print(dialect.command(command)))
-        "assert" -> assertions += formula(dialect.term(command.items[1]))
-        "set-logic",
-        "set-option",
-        "set-info",
-        "check-sat",
-        "get-model",
-        "get-value",
-        "push",
-        "pop",
-        "exit" -> Unit
-        else -> throw IllegalArgumentException("Unsupported command $name")
-      }
-    }
-
-    return assertions
+    val handler = Handler()
+    SMTScriptParser.parseInto(program, script, handler)
+    return handler.assertions
   }
 
   /** Parses a single Boolean term, e.g. `(bvslt __int_0 #x00000005)`. */
-  fun parseFormula(term: String): Expression<BoolSort> =
-      formula(dialect.term(SExpr.parseAll(term).single()))
+  fun parseFormula(term: String): Expression<BoolSort> {
+    val expr = parseTerm(term)
+    require(expr.sort == SMTBool) { "Expected a Bool term, got ${expr.sort}: $term" }
+    return expr.cast()
+  }
 
   /** Parses a single term of any sort. */
-  fun parseTerm(term: String): Expression<*> =
-      SMTScriptParser.parseTerm(SExpr.print(dialect.term(SExpr.parseAll(term).single())), program)
+  fun parseTerm(term: String): Expression<*> = SMTScriptParser.parseTerm(term, program)
 
   /** Returns true if [symbol] is declared in this context. */
   fun isDeclared(symbol: String) = symbol.toSymbol() in program.context
@@ -102,9 +69,35 @@ class SmtContext {
     return Variable(name, func.sort)
   }
 
-  private fun formula(term: SExpr): Expression<BoolSort> {
-    val expr = SMTScriptParser.parseTerm(SExpr.print(term), program)
-    require(expr.sort == SMTBool) { "Expected a Bool term, got ${expr.sort}: $term" }
-    return expr.cast()
+  private class Handler : ScriptHandler {
+    val assertions = mutableListOf<Expression<BoolSort>>()
+
+    override fun assert(program: MutableSMTProgram, term: Expression<BoolSort>) {
+      assertions += term
+    }
+
+    override fun declareConst(program: MutableSMTProgram, symbol: Symbol, sort: Sort) =
+        declareFun(program, symbol, emptyList(), sort)
+
+    override fun declareFun(
+        program: MutableSMTProgram,
+        symbol: Symbol,
+        parameters: List<Sort>,
+        sort: Sort,
+    ) {
+      val known = program.context.getFuncOrNull(symbol)
+      if (known == null) {
+        program.declareFun(symbol, parameters, sort)
+      } else {
+        require(known.parameters == parameters && known.sort == sort) {
+          "$symbol is already declared as (${known.parameters.joinToString(" ")}) ${known.sort}, " +
+              "not (${parameters.joinToString(" ")}) $sort"
+        }
+      }
+    }
+
+    override fun push(program: MutableSMTProgram, n: Int) = Unit
+
+    override fun pop(program: MutableSMTProgram, n: Int) = Unit
   }
 }

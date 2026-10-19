@@ -50,7 +50,7 @@ class TraceSolvingTest {
 
     List<Expression<BoolSort>> decision =
         smt.load("(assert (= __string_0 \"whoopsy\"))");
-    Expression<BoolSort> bound = smt.parseFormula("(< __int_0 #xfffffffb)");
+    Expression<BoolSort> bound = smt.parseFormula("(bvslt __int_0 #xfffffffb)");
 
     try (SolverContext ctx = z3().createContext()) {
       ctx.add(decision);
@@ -68,7 +68,7 @@ class TraceSolvingTest {
     smt.declare("(declare-fun __int_0 () (_ BitVec 32))");
     Expression<BoolSort> taken = smt.parseFormula("(bvslt __int_0 #x0000000a)");
     // the divisor check as SPouT prints it
-    Expression<BoolSort> nonZero = smt.parseFormula("(!= __int_0 #x00000000)");
+    Expression<BoolSort> nonZero = smt.parseFormula("(not (= __int_0 #x00000000))");
 
     try (SolverContext ctx = z3().createContext()) {
       ctx.add(nonZero);
@@ -106,7 +106,7 @@ class TraceSolvingTest {
         smt.load(
             "(assert (not (bvsle (fld.Box.x (fld.BoxPair.a __object_0)) #x00000000)))"
                 + "(assert (= (obj.cls (fld.BoxPair.a __object_0)) \"LBox;\"))"
-                + "(assert (fp.lt (fp.add (RNE RoundingMode) __double_0 __double_0)"
+                + "(assert (fp.lt (fp.add RNE __double_0 __double_0)"
                 + " ((_ to_fp 11 53) RNE 0.5)))"
                 + "(assert (fp.isNegative __double_0))");
 

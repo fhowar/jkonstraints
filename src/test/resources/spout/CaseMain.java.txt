@@ -1,0 +1,17 @@
+import tools.aqua.concolic.Verifier;
+
+public class CaseMain {
+  public static void main(String[] args) {
+    String s = Verifier.nondetString();
+    String t = Verifier.nondetString();
+    char c = Verifier.nondetChar();
+    int sink = 0;
+    if (s.toLowerCase().equals("hello")) sink++;
+    if (s.toUpperCase().startsWith("AB")) sink++;
+    if (s.equalsIgnoreCase("Xy")) sink++;
+    if (s.regionMatches(true, 0, t, 0, 2)) sink++;
+    if (Character.toUpperCase(c) == 'Q') sink++;
+    if (Character.toLowerCase(c) == 'z') sink++;
+    System.out.println(sink);
+  }
+}
